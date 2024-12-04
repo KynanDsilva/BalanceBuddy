@@ -146,6 +146,25 @@
         .friend-request-actions button {
             margin-left: 10px;
         }
+
+        .friend-list {
+            margin-top: 20px;
+        }
+
+        .friend-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .friend-list li {
+            background-color: #f9f9f9;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 
@@ -161,7 +180,14 @@
             <input type="text" id="searchInput" placeholder="Search users...">
             <button id="searchButton">Search</button>
         </div>
+
         <div id="searchResults"></div>
+
+        <div class="friend-list">
+            <h3>Friend List</h3>
+            <div id="friendList"></div>
+        </div>
+
         <div class="friend-requests">
             <h3>Friend Requests</h3>
             <div id="friendRequestsReceived"></div>
@@ -203,6 +229,7 @@
             } else {
                 console.log("User is logged in:", user.email);
                 displayFriendRequests();
+                displayFriendList();  // Display friend list when logged in
             }
         });
 
@@ -230,18 +257,17 @@
                     return;
                 }
 
-                // Send the friend request by updating the current user's data
+                // Add the friend request to the current user's "friendRequestsSent" array
                 await updateDoc(doc(db, "users", user.uid), {
                     friendRequestsSent: arrayUnion(friendId)
                 });
 
-                // Also update the recipient's data with the incoming request
+                // Add the current user to the friend's "friendRequestsReceived" array
                 await updateDoc(doc(db, "users", friendId), {
                     friendRequestsReceived: arrayUnion(user.uid)
                 });
 
                 alert('Friend request sent!');
-                displayFriendRequests(); // Refresh the request list
             } catch (error) {
                 console.error("Error sending friend request:", error);
                 alert("Something went wrong. Please try again.");
@@ -322,6 +348,7 @@
 
             alert('Friend request accepted!');
             displayFriendRequests(); // Refresh the list
+            displayFriendList(); // Refresh the friend list
         }
 
         // Function to reject a friend request
@@ -341,6 +368,40 @@
 
             alert('Friend request rejected!');
             displayFriendRequests(); // Refresh the list
+        }
+
+        // Function to display the friend's list
+        async function displayFriendList() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (!userDoc.exists()) {
+                console.error("User not found in Firestore");
+                return;
+            }
+
+            const userData = userDoc.data();
+            const friendListContainer = document.getElementById('friendList');
+            friendListContainer.innerHTML = "<h4>Your Friends</h4>";
+
+            // Display the number of friends
+            if (userData.friends && userData.friends.length > 0) {
+                userData.friends.forEach(async (friendId) => {
+                    const friendDoc = await getDoc(doc(db, "users", friendId));
+                    const friendData = friendDoc.data();
+
+                    const friendItem = document.createElement('li');
+                    friendItem.innerHTML = `${friendData.name || 'Unknown'} (${friendData.email})`;
+                    friendListContainer.appendChild(friendItem);
+                });
+
+                // Show friend count
+                const friendCount = userData.friends.length;
+                friendListContainer.innerHTML = `<h4>Your Friends (${friendCount})</h4>` + friendListContainer.innerHTML;
+            } else {
+                friendListContainer.innerHTML += "<div class='no-results'>You have no friends yet.</div>";
+            }
         }
 
         // Function to search users
@@ -388,8 +449,11 @@
         // Event listener for search button
         document.getElementById("searchButton").addEventListener('click', searchUsers);
 
-        // Load friend requests when the page is loaded
-        window.onload = displayFriendRequests;
+        // Load friend requests and list when the page is loaded
+        window.onload = function() {
+            displayFriendRequests();
+            displayFriendList();
+        };
     </script>
 
 </body>
