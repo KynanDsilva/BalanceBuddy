@@ -1,30 +1,228 @@
 <!DOCTYPE html>
-<html>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="index.css">
-<link rel="icon" href="images/BB.ico">
-<title>BalanceBuddy</title>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BalanceBuddy</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f8ff;
+            color: #333;
+            scroll-behavior: smooth;
+        }
 
+        header {
+            background: linear-gradient(135deg, #007acc, #48b1f4);
+            color: white;
+            padding: 4em 0 2em 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            font-size: 3.5rem;
+            margin: 0;
+        }
+        header p {
+            font-size: 1.5rem;
+            margin-top: 0.5em;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            background: #e6f7ff;
+            padding: 1em 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        nav a {
+            margin: 0 20px;
+            padding: 10px 20px;
+            text-decoration: none;
+            color: #007acc;
+            font-weight: bold;
+            border: 2px solid transparent;
+            border-radius: 30px;
+            transition: 0.3s ease-in-out;
+        }
+        nav a:hover {
+            background: #007acc;
+            color: white;
+            border-color: #005b99;
+        }
+
+        .hero {
+            background: url('hero-image.jpg') no-repeat center center/cover;
+            height: 80vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            background-color: #007acc;
+            position: relative;
+        }
+        .hero::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1;
+        }
+        .hero h1, .hero p {
+            position: relative;
+            z-index: 2;
+        }
+        .hero h1 {
+            font-size: 4rem;
+        }
+        .hero p {
+            font-size: 1.5rem;
+        }
+
+        .content {
+            padding: 3em 2em;
+            text-align: center;
+            margin: 2em auto;
+            width: 90%;
+            max-width: 900px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background: white;
+        }
+        .content h2 {
+            font-size: 2.5rem;
+            color: #007acc;
+            margin-bottom: 1em;
+        }
+        .content p {
+            font-size: 1.2rem;
+            line-height: 1.8;
+        }
+        .content ul {
+            list-style: none;
+            padding: 0;
+            margin: 1em 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1em;
+        }
+        .content ul li {
+            background: #e6f7ff;
+            padding: 1em 2em;
+            border-radius: 20px;
+            font-size: 1rem;
+            color: #007acc;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+        .content ul li:hover {
+            transform: scale(1.05);
+        }
+
+        footer {
+            background: linear-gradient(135deg, #005b99, #007acc);
+            color: white;
+            text-align: center;
+            padding: 2em 0;
+            margin-top: 3em;
+        }
+        footer p {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .contact-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #007acc;
+            color: white;
+            padding: 15px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+        }
+        .contact-btn:hover {
+            background: #005b99;
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
 <body>
-    <div class="header">
-        <div class="inner-header">
-            <div class="logo-container">
-                <img src="images/balancebuddy-high-resolution-logo-transparent.png" alt="">
+    <header>
+        <h1>BalanceBuddy</h1>
+        <p>Your guide to achieving balance in life and finances</p>
+    </header>
 
-            </div>
-            <div class="button-container">
-                <button type="button" class="login" id="login"
-                    onclick="window.location.href = 'login.html'">Login</button>
-                <button type="button" class="register" id="register"
-                    onclick="window.location.href = 'register.html'">Register</button>
-            </div>
+    <nav>
+        <a href="#about">About Us</a>
+        <a href="#services">Services</a>
+        <a href="#contact">Contact</a>
+    </nav>
 
+    <section class="hero">
+        <div>
+            <h1>Find Your Balance</h1>
+            <p>Helping you thrive with personalized plans for financial and lifestyle harmony.</p>
         </div>
+    </section>
 
-    </div>
+    <section class="content" id="about">
+        <h2>About Us</h2>
+        <ul>
+            <li>• Are you tired of your friends forgetting to pay you back?</li>
+            <li>• We got you covered. Introducing BalanceBuddy.</li>
+            <li>• BalanceBuddy keeps track of the money you lend/owe, split your bills into equal shares, so you don’t have to.</li>
+        </ul>
+    </section>
 
-    <script src="index.js"></script>
+    <section class="content" id="services">
+        <h2>Our Services</h2>
+        <ul>
+            <li>Chatting site</li>
+            <li>Keeps track of the money you lend/owe</li>
+            <li>Reminders to Pay Back the money to your Friends/Family</li>
+        </ul>
+    </section>
+
+    <section class="content" id="contact">
+        <h2>Contact Us</h2>
+        <p>Email: <a href="mailto:krrishbkothari@gmal.com" style="color: #007acc;">krrishbkothari@gmail.com</a></p>
+        <p>Email: <a href="mailto:kynandsilva06@gmail.com" style="color: #007acc;">kynandsilva06@gmail.com</a></p>
+        <p>Email: <a href="mailto:vedant.poman@gmail.com" style="color: #007acc;">vedant.poman@gmail.com</a></p>
+        <p>Phone: +91-9321986560</p>
+        <p>Phone: +91-9867649722</p>
+        <p>Phone: +91-9833650239</p>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 Balance Buddies. All rights reserved.</p>
+    </footer>
+
+    <button class="contact-btn" onclick="openEmail()">Contact Us</button>
+
+    <script>
+        function openEmail() {
+            const recipients = "krrishbkothari@gmail.com,kynandsilva06@gmail.com,vedant.poman@gmail.com";
+            const subject = "Inquiry";
+            const body = "Hi Balance Buddies,";
+            window.location.href = `mailto:${recipients}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+    </script>
 </body>
-
 </html>
