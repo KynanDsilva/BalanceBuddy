@@ -1,7 +1,7 @@
 // Import the necessary Firebase functions
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
-import { getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
 // Firebase configuration (This holds all your Firebase project credentials)
 const firebaseConfig = {
@@ -18,6 +18,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);  // Initializes Firebase for your app
 const analytics = getAnalytics(app);
 const auth = getAuth();  // Sets up authentication
+
+onAuthStateChanged(auth, user => {
+    if (user) {
+        // If the user is logged in, redirect to home page
+        window.location.href = 'home.html'; // Change to your home page URL
+    }
+});
 
 // Login submit handler
 const submit = document.getElementById('submit');
