@@ -1,27 +1,26 @@
 <!DOCTYPE html>
-<html>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="en">
 <link rel="stylesheet" href="home.css">
 <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 <link rel="icon" href="images/BB.ico">
-<title>BalanceBuddy</title>
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Friends</title>
+    <title>BB | Add Friends</title>
     <style>
         /* Basic Styles */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: "Poppins", sans-serif;
             background-color: #f4f4f9;
             margin: 0;
             padding: 0;
         }
 
         header {
-            background-color: #4CAF50;
+            background-color: lightblue;
             color: white;
             text-align: center;
             padding: 15px;
@@ -71,14 +70,17 @@
     <div class="container">
         <input type="text" id="searchInput" placeholder="Search users">
         <button id="searchButton">Search</button>
-        <div id="searchResults"></div>
+        <div id="searchResults">
+            <button id="sendRequestButton">Send Friend Request</button>
+        </div>
         <h3>Friend Requests</h3>
         <div id="friendRequestsReceived"></div>
         <div id="friendRequestsSent"></div>
     </div>
 
-    <script type="module" defer>
+    <script type="module">
         // Import Firebase modules
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-analytics.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, query, where, getDocs, collection } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
@@ -87,8 +89,9 @@
         const firebaseConfig = {
             apiKey: "AIzaSyCM2bVe7bRvhlBducH9kxw1CRmrsK_kYEA",
             authDomain: "balancebuddy-5427b.firebaseapp.com",
+            databaseURL: "https://balancebuddy-5427b-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "balancebuddy-5427b",
-            storageBucket: "balancebuddy-5427b.appspot.com",
+            storageBucket: "balancebuddy-5427b.firebasestorage.app",
             messagingSenderId: "263147724503",
             appId: "1:263147724503:web:6ee0f6171e89a4d4575a92",
             measurementId: "G-5SJQ1VLRHH"
@@ -100,34 +103,64 @@
         // Get Firestore and Auth instances
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const analytics = getAnalytics(app);
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                console.log("User not logged in, redirecting to login page");
+                window.location.href = "login.html";  // Check if the path is correct
+            } else {
+                console.log("User is logged in:", user.email);
+            }
+        });
+
 
         // Function to send a friend request
         async function sendFriendRequest(friendId) {
             const user = auth.currentUser;
-            if (!user) return alert('You must be logged in to send a friend request.');
-
-            // Fetch current user's data from Firestore
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            const userData = userDoc.data();
-
-            // Check if friend request is already sent
-            if (userData.friendRequestsSent && userData.friendRequestsSent.includes(friendId)) {
-                alert('Friend request already sent.');
+            if (!user) {
+                alert('You must be logged in to send a friend request.');
                 return;
             }
 
-            // Send the friend request by updating the user's data
-            await updateDoc(doc(db, "users", user.uid), {
-                friendRequestsSent: arrayUnion(friendId)
-            });
+            try {
+                // Fetch current user's data from Firestore
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (!userDoc.exists()) {
+                    console.error("User not found in Firestore");
+                    return;
+                }
 
-            // Also update the recipient's data with the incoming request
-            await updateDoc(doc(db, "users", friendId), {
-                friendRequestsReceived: arrayUnion(user.uid)
-            });
+                const userData = userDoc.data();
 
-            alert('Friend request sent!');
+                // Check if friend request is already sent
+                if (userData.friendRequestsSent && userData.friendRequestsSent.includes(friendId)) {
+                    alert('Friend request already sent.');
+                    return;
+                }
+
+                // Send the friend request by updating the current user's data
+                await updateDoc(doc(db, "users", user.uid), {
+                    friendRequestsSent: arrayUnion(friendId)
+                });
+
+                // Also update the recipient's data with the incoming request
+                await updateDoc(doc(db, "users", friendId), {
+                    friendRequestsReceived: arrayUnion(user.uid)
+                });
+
+                alert('Friend request sent!');
+            } catch (error) {
+                console.error("Error sending friend request:", error);
+                alert('An error occurred while sending the friend request.');
+            }
         }
+
+        document.getElementById("sendRequestButton").addEventListener("click", function () {
+            const friendId = "receiverId";
+            sendFriendRequest(friendId);
+        })
+
 
         // Function to display friend requests (sent and received)
         async function displayFriendRequests() {
@@ -210,30 +243,63 @@
             displayFriendRequests(); // Refresh the friend requests
         }
 
-        // Function to search for users
+        // Search users function
         async function searchUsers() {
-            const searchQuery = document.getElementById('searchInput').value;
-            if (!searchQuery) return;
+            const searchQuery = document.getElementById("searchInput").value.trim();  // Get the search input and trim extra spaces
 
-            // Query Firestore to search for users based on email
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("email", ">=", searchQuery), where("email", "<=", searchQuery + '\uf8ff'));
-            const querySnapshot = await getDocs(q);
+            if (!searchQuery) {
+                console.log("Please enter a name.");
+                return;
+            }
 
-            const resultsContainer = document.getElementById('searchResults');
-            resultsContainer.innerHTML = ''; // Clear previous results
+            // Get the search results element
+            const searchResults = document.getElementById("searchResults");
+            searchResults.innerHTML = ""; // Clear previous search results
 
-            querySnapshot.forEach(doc => {
-                const userData = doc.data();
-                const userItem = document.createElement('div');
-                userItem.className = 'user-item';
-                userItem.innerHTML = `
-            <p>${userData.email}</p>
-            <button onclick="sendFriendRequest('${doc.id}')">Send Friend Request</button>
-        `;
-                resultsContainer.appendChild(userItem);
-            });
+            try {
+                // Reference to Firestore users collection
+                const usersRef = collection(db, "users");
+
+                // Get all users (Firestore query won't be case-insensitive or partial)
+                const querySnapshot = await getDocs(usersRef);
+
+                let foundUsers = 0;
+
+                querySnapshot.forEach((doc) => {
+                    const userData = doc.data();
+                    const userName = userData.name || ""; // Get the user name, handle missing name field
+                    const userId = doc.id;
+
+                    // Check if the searchQuery exists anywhere in the userName, case-insensitive
+                    if (userName.toLowerCase().includes(searchQuery.toLowerCase())) {
+                        foundUsers++;
+
+                        // Create a new div for each result
+                        const userDiv = document.createElement("div");
+                        userDiv.innerHTML = `
+                            <span>${userName}</span>
+                            <button id="friendRequestButton-${userId}" class="friend-request-btn">
+                        `;
+
+                        searchResults.appendChild(userDiv);
+
+                        document.getElementById(`friendRequestButton-${userId}`).addEventListener('click', function() {
+                            sendFriendRequest(userId);
+                        });
+                    }
+                });
+
+                // If no users match the search term
+                if (foundUsers === 0) {
+                    searchResults.innerHTML = "No users found.";
+                }
+            } catch (error) {
+                console.error("Error searching users: ", error);
+            }
         }
+
+
+
 
         document.getElementById('searchButton').addEventListener('click', searchUsers);
 
