@@ -1,9 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<link rel="stylesheet" href="home.css">
-<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-<link rel="icon" href="images/BB.ico">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,43 +16,135 @@
         }
 
         header {
-            background-color: lightblue;
+            background-color: #007BFF;
             color: white;
             text-align: center;
-            padding: 15px;
+            padding: 20px;
+            border-bottom: 2px solid #0056b3;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 2em;
+            margin: 0;
+        }
+
+        /* Friend request badge */
+        #friendRequestBadge {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background-color: red;
+            color: white;
+            font-size: 0.9em;
+            border-radius: 50%;
+            padding: 5px 10px;
+            display: none;
         }
 
         .container {
+            max-width: 900px;
+            margin: 30px auto;
             padding: 20px;
-            text-align: center;
+            background-color: white;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
         }
 
-        .btn {
+        .search-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        #searchInput {
+            width: 75%;
             padding: 10px;
-            background-color: #4CAF50;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+
+        #searchButton {
+            padding: 10px 15px;
+            background-color: #007BFF;
             color: white;
             border: none;
+            border-radius: 5px;
             cursor: pointer;
-            margin-top: 10px;
+            transition: background-color 0.3s ease;
         }
 
-        .btn:hover {
-            background-color: #45a049;
-        }
-
-        .friend-request {
-            margin: 10px 0;
-        }
-
-        .search-results {
-            margin-top: 20px;
+        #searchButton:hover {
+            background-color: #0056b3;
         }
 
         .user-item {
+            padding: 15px;
+            background-color: #f9f9f9;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #ddd;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-item button {
+            padding: 8px 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .user-item button:hover {
+            background-color: #218838;
+        }
+
+        .friend-requests {
+            margin-top: 20px;
+        }
+
+        .friend-request {
             padding: 10px;
-            border: 1px solid #ccc;
-            margin: 5px;
-            display: inline-block;
+            background-color: #f8f9fa;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .friend-request button {
+            padding: 8px 12px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .friend-request button:hover {
+            background-color: #0056b3;
+        }
+
+        .no-results {
+            font-size: 1.2em;
+            color: #888;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .friend-request-actions button {
+            margin-left: 10px;
         }
     </style>
 </head>
@@ -65,25 +153,28 @@
 
     <header>
         <h1>Add Friends</h1>
+        <span id="friendRequestBadge">New</span>
     </header>
 
     <div class="container">
-        <input type="text" id="searchInput" placeholder="Search users">
-        <button id="searchButton">Search</button>
-        <div id="searchResults">
-            <button id="sendRequestButton">Send Friend Request</button>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search users...">
+            <button id="searchButton">Search</button>
         </div>
-        <h3>Friend Requests</h3>
-        <div id="friendRequestsReceived"></div>
-        <div id="friendRequestsSent"></div>
+        <div id="searchResults"></div>
+        <div class="friend-requests">
+            <h3>Friend Requests</h3>
+            <div id="friendRequestsReceived"></div>
+            <div id="friendRequestsSent"></div>
+        </div>
     </div>
 
     <script type="module">
         // Import Firebase modules
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-analytics.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, query, where, getDocs, collection } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
 
         // Firebase configuration
         const firebaseConfig = {
@@ -111,9 +202,9 @@
                 window.location.href = "login.html";  // Check if the path is correct
             } else {
                 console.log("User is logged in:", user.email);
+                displayFriendRequests();
             }
         });
-
 
         // Function to send a friend request
         async function sendFriendRequest(friendId) {
@@ -150,163 +241,157 @@
                 });
 
                 alert('Friend request sent!');
+                displayFriendRequests(); // Refresh the request list
             } catch (error) {
                 console.error("Error sending friend request:", error);
                 alert('An error occurred while sending the friend request.');
             }
         }
 
-        document.getElementById("sendRequestButton").addEventListener("click", function () {
-            const friendId = "receiverId";
-            sendFriendRequest(friendId);
-        })
-
-
         // Function to display friend requests (sent and received)
         async function displayFriendRequests() {
             const user = auth.currentUser;
             if (!user) return;
 
+            // Get current user's data
             const userDoc = await getDoc(doc(db, "users", user.uid));
-            const userData = userDoc.data();
+            if (!userDoc.exists()) {
+                console.error("User not found in Firestore");
+                return;
+            }
 
-            // Display received friend requests
+            const userData = userDoc.data();
             const receivedContainer = document.getElementById('friendRequestsReceived');
             receivedContainer.innerHTML = '<h4>Received</h4>';
-            if (userData.friendRequestsReceived) {
+            let hasRequests = false;
+
+            // Display received friend requests
+            if (userData.friendRequestsReceived && userData.friendRequestsReceived.length > 0) {
+                hasRequests = true;
                 userData.friendRequestsReceived.forEach(async (senderId) => {
                     const senderDoc = await getDoc(doc(db, "users", senderId));
                     const senderData = senderDoc.data();
                     const requestDiv = document.createElement('div');
                     requestDiv.className = 'friend-request';
                     requestDiv.innerHTML = `
-                <p>${senderData.email}</p>
-                <button onclick="acceptFriendRequest('${senderId}')">Accept</button>
-                <button onclick="rejectFriendRequest('${senderId}')">Reject</button>
-            `;
+                        <span>${senderData.email}</span>
+                        <div class="friend-request-actions">
+                            <button class="accept-btn" data-id="${senderId}">Accept</button>
+                            <button class="reject-btn" data-id="${senderId}">Reject</button>
+                        </div>
+                    `;
                     receivedContainer.appendChild(requestDiv);
                 });
+            } else {
+                receivedContainer.innerHTML += "<div class='no-results'>No friend requests.</div>";
             }
 
-            // Display sent friend requests
-            const sentContainer = document.getElementById('friendRequestsSent');
-            sentContainer.innerHTML = '<h4>Sent</h4>';
-            if (userData.friendRequestsSent) {
-                userData.friendRequestsSent.forEach(async (receiverId) => {
-                    const receiverDoc = await getDoc(doc(db, "users", receiverId));
-                    const receiverData = receiverDoc.data();
-                    const requestDiv = document.createElement('div');
-                    requestDiv.className = 'friend-request';
-                    requestDiv.innerHTML = `<p>${receiverData.email}</p>`;
-                    sentContainer.appendChild(requestDiv);
-                });
+            // Show or hide the friend request badge
+            const friendRequestBadge = document.getElementById('friendRequestBadge');
+            if (hasRequests) {
+                friendRequestBadge.style.display = 'block';
+            } else {
+                friendRequestBadge.style.display = 'none';
             }
+
+            // Adding event listeners for accept/reject buttons
+            const acceptButtons = document.querySelectorAll('.accept-btn');
+            acceptButtons.forEach(button => {
+                button.addEventListener('click', () => acceptFriendRequest(button.dataset.id));
+            });
+
+            const rejectButtons = document.querySelectorAll('.reject-btn');
+            rejectButtons.forEach(button => {
+                button.addEventListener('click', () => rejectFriendRequest(button.dataset.id));
+            });
         }
 
         // Function to accept a friend request
         async function acceptFriendRequest(senderId) {
             const user = auth.currentUser;
-            if (!user) return alert('You must be logged in.');
+            if (!user) return;
 
-            // Add the sender to the user's friend list and remove from requests
+            // Add each user to the other's friends list
             await updateDoc(doc(db, "users", user.uid), {
                 friends: arrayUnion(senderId),
                 friendRequestsReceived: arrayRemove(senderId)
             });
-
-            // Add the user to the sender's friend list and remove from their sent requests
             await updateDoc(doc(db, "users", senderId), {
                 friends: arrayUnion(user.uid),
                 friendRequestsSent: arrayRemove(user.uid)
             });
 
             alert('Friend request accepted!');
-            displayFriendRequests(); // Refresh the friend requests
+            displayFriendRequests(); // Refresh the list
         }
 
         // Function to reject a friend request
         async function rejectFriendRequest(senderId) {
             const user = auth.currentUser;
-            if (!user) return alert('You must be logged in.');
+            if (!user) return;
 
-            // Remove the sender from received friend requests
+            // Remove the request from the user's received list
             await updateDoc(doc(db, "users", user.uid), {
                 friendRequestsReceived: arrayRemove(senderId)
             });
 
-            // Remove the user from the sender's sent friend requests
+            // Remove the request from the sender's sent list
             await updateDoc(doc(db, "users", senderId), {
                 friendRequestsSent: arrayRemove(user.uid)
             });
 
             alert('Friend request rejected!');
-            displayFriendRequests(); // Refresh the friend requests
+            displayFriendRequests(); // Refresh the list
         }
 
-        // Search users function
+        // Function to search users
         async function searchUsers() {
-            const searchQuery = document.getElementById("searchInput").value.trim();  // Get the search input and trim extra spaces
+            const searchQuery = document.getElementById("searchInput").value.trim();
+            if (!searchQuery) return;
 
-            if (!searchQuery) {
-                console.log("Please enter a name.");
-                return;
-            }
-
-            // Get the search results element
             const searchResults = document.getElementById("searchResults");
-            searchResults.innerHTML = ""; // Clear previous search results
+            searchResults.innerHTML = '';  // Clear previous results
+
+            let foundUsers = 0;
 
             try {
-                // Reference to Firestore users collection
-                const usersRef = collection(db, "users");
-
-                // Get all users (Firestore query won't be case-insensitive or partial)
-                const querySnapshot = await getDocs(usersRef);
-
-                let foundUsers = 0;
-
-                querySnapshot.forEach((doc) => {
+                const usersSnapshot = await getDocs(collection(db, "users"));
+                usersSnapshot.forEach((doc) => {
                     const userData = doc.data();
-                    const userName = userData.name || ""; // Get the user name, handle missing name field
+                    const userName = userData.name || "";
                     const userId = doc.id;
 
-                    // Check if the searchQuery exists anywhere in the userName, case-insensitive
                     if (userName.toLowerCase().includes(searchQuery.toLowerCase())) {
                         foundUsers++;
 
-                        // Create a new div for each result
                         const userDiv = document.createElement("div");
+                        userDiv.className = "user-item";
                         userDiv.innerHTML = `
                             <span>${userName}</span>
-                            <button id="friendRequestButton-${userId}" class="friend-request-btn">
+                            <button id="friendRequestButton-${userId}">Send Friend Request</button>
                         `;
-
                         searchResults.appendChild(userDiv);
 
-                        document.getElementById(`friendRequestButton-${userId}`).addEventListener('click', function() {
+                        document.getElementById(`friendRequestButton-${userId}`).addEventListener('click', function () {
                             sendFriendRequest(userId);
                         });
                     }
                 });
 
-                // If no users match the search term
                 if (foundUsers === 0) {
-                    searchResults.innerHTML = "No users found.";
+                    searchResults.innerHTML = "<div class='no-results'>No users found.</div>";
                 }
             } catch (error) {
-                console.error("Error searching users: ", error);
+                console.error("Error searching users:", error);
             }
         }
 
+        // Event listener for search button
+        document.getElementById("searchButton").addEventListener('click', searchUsers);
 
-
-
-        document.getElementById('searchButton').addEventListener('click', searchUsers);
-
-        // Call displayFriendRequests on page load to show current requests
-        displayFriendRequests();
+        // Load friend requests when the page is loaded
+        window.onload = displayFriendRequests;
     </script>
 
 </body>
-
 </html>
