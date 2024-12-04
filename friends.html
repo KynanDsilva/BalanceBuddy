@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="home.css">
+<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+<link rel="icon" href="images/BB.ico">
+<title>BalanceBuddy</title>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Friends</title>
+    <style>
+        /* Basic Styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .container {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+        }
+
+        .friend-request {
+            margin: 10px 0;
+        }
+
+        .search-results {
+            margin-top: 20px;
+        }
+
+        .user-item {
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin: 5px;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Add Friends</h1>
+    </header>
+
+    <div class="container">
+        <input type="text" id="searchInput" placeholder="Search users">
+        <button id="searchButton">Search</button>
+        <div id="searchResults"></div>
+        <h3>Friend Requests</h3>
+        <div id="friendRequestsReceived"></div>
+        <div id="friendRequestsSent"></div>
+    </div>
+
+    <script type="module" defer>
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, query, where, getDocs, collection } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCM2bVe7bRvhlBducH9kxw1CRmrsK_kYEA",
+            authDomain: "balancebuddy-5427b.firebaseapp.com",
+            projectId: "balancebuddy-5427b",
+            storageBucket: "balancebuddy-5427b.appspot.com",
+            messagingSenderId: "263147724503",
+            appId: "1:263147724503:web:6ee0f6171e89a4d4575a92",
+            measurementId: "G-5SJQ1VLRHH"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+
+        // Get Firestore and Auth instances
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Function to send a friend request
+        async function sendFriendRequest(friendId) {
+            const user = auth.currentUser;
+            if (!user) return alert('You must be logged in to send a friend request.');
+
+            // Fetch current user's data from Firestore
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            const userData = userDoc.data();
+
+            // Check if friend request is already sent
+            if (userData.friendRequestsSent && userData.friendRequestsSent.includes(friendId)) {
+                alert('Friend request already sent.');
+                return;
+            }
+
+            // Send the friend request by updating the user's data
+            await updateDoc(doc(db, "users", user.uid), {
+                friendRequestsSent: arrayUnion(friendId)
+            });
+
+            // Also update the recipient's data with the incoming request
+            await updateDoc(doc(db, "users", friendId), {
+                friendRequestsReceived: arrayUnion(user.uid)
+            });
+
+            alert('Friend request sent!');
+        }
+
+        // Function to display friend requests (sent and received)
+        async function displayFriendRequests() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            const userData = userDoc.data();
+
+            // Display received friend requests
+            const receivedContainer = document.getElementById('friendRequestsReceived');
+            receivedContainer.innerHTML = '<h4>Received</h4>';
+            if (userData.friendRequestsReceived) {
+                userData.friendRequestsReceived.forEach(async (senderId) => {
+                    const senderDoc = await getDoc(doc(db, "users", senderId));
+                    const senderData = senderDoc.data();
+                    const requestDiv = document.createElement('div');
+                    requestDiv.className = 'friend-request';
+                    requestDiv.innerHTML = `
+                <p>${senderData.email}</p>
+                <button onclick="acceptFriendRequest('${senderId}')">Accept</button>
+                <button onclick="rejectFriendRequest('${senderId}')">Reject</button>
+            `;
+                    receivedContainer.appendChild(requestDiv);
+                });
+            }
+
+            // Display sent friend requests
+            const sentContainer = document.getElementById('friendRequestsSent');
+            sentContainer.innerHTML = '<h4>Sent</h4>';
+            if (userData.friendRequestsSent) {
+                userData.friendRequestsSent.forEach(async (receiverId) => {
+                    const receiverDoc = await getDoc(doc(db, "users", receiverId));
+                    const receiverData = receiverDoc.data();
+                    const requestDiv = document.createElement('div');
+                    requestDiv.className = 'friend-request';
+                    requestDiv.innerHTML = `<p>${receiverData.email}</p>`;
+                    sentContainer.appendChild(requestDiv);
+                });
+            }
+        }
+
+        // Function to accept a friend request
+        async function acceptFriendRequest(senderId) {
+            const user = auth.currentUser;
+            if (!user) return alert('You must be logged in.');
+
+            // Add the sender to the user's friend list and remove from requests
+            await updateDoc(doc(db, "users", user.uid), {
+                friends: arrayUnion(senderId),
+                friendRequestsReceived: arrayRemove(senderId)
+            });
+
+            // Add the user to the sender's friend list and remove from their sent requests
+            await updateDoc(doc(db, "users", senderId), {
+                friends: arrayUnion(user.uid),
+                friendRequestsSent: arrayRemove(user.uid)
+            });
+
+            alert('Friend request accepted!');
+            displayFriendRequests(); // Refresh the friend requests
+        }
+
+        // Function to reject a friend request
+        async function rejectFriendRequest(senderId) {
+            const user = auth.currentUser;
+            if (!user) return alert('You must be logged in.');
+
+            // Remove the sender from received friend requests
+            await updateDoc(doc(db, "users", user.uid), {
+                friendRequestsReceived: arrayRemove(senderId)
+            });
+
+            // Remove the user from the sender's sent friend requests
+            await updateDoc(doc(db, "users", senderId), {
+                friendRequestsSent: arrayRemove(user.uid)
+            });
+
+            alert('Friend request rejected!');
+            displayFriendRequests(); // Refresh the friend requests
+        }
+
+        // Function to search for users
+        async function searchUsers() {
+            const searchQuery = document.getElementById('searchInput').value;
+            if (!searchQuery) return;
+
+            // Query Firestore to search for users based on email
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("email", ">=", searchQuery), where("email", "<=", searchQuery + '\uf8ff'));
+            const querySnapshot = await getDocs(q);
+
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = ''; // Clear previous results
+
+            querySnapshot.forEach(doc => {
+                const userData = doc.data();
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.innerHTML = `
+            <p>${userData.email}</p>
+            <button onclick="sendFriendRequest('${doc.id}')">Send Friend Request</button>
+        `;
+                resultsContainer.appendChild(userItem);
+            });
+        }
+
+        document.getElementById('searchButton').addEventListener('click', searchUsers);
+
+        // Call displayFriendRequests on page load to show current requests
+        displayFriendRequests();
+    </script>
+
+</body>
+
+</html>
