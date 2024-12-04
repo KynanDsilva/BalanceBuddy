@@ -244,16 +244,15 @@
                 displayFriendRequests(); // Refresh the request list
             } catch (error) {
                 console.error("Error sending friend request:", error);
-                alert('An error occurred while sending the friend request.');
+                alert("Something went wrong. Please try again.");
             }
         }
 
-        // Function to display friend requests (sent and received)
+        // Function to display received and sent friend requests
         async function displayFriendRequests() {
             const user = auth.currentUser;
             if (!user) return;
 
-            // Get current user's data
             const userDoc = await getDoc(doc(db, "users", user.uid));
             if (!userDoc.exists()) {
                 console.error("User not found in Firestore");
@@ -294,15 +293,15 @@
                 friendRequestBadge.style.display = 'none';
             }
 
-            // Adding event listeners for accept/reject buttons
-            const acceptButtons = document.querySelectorAll('.accept-btn');
-            acceptButtons.forEach(button => {
-                button.addEventListener('click', () => acceptFriendRequest(button.dataset.id));
-            });
+            // Adding event delegation for accept/reject buttons
+            receivedContainer.addEventListener('click', function (e) {
+                if (e.target && e.target.matches('.accept-btn')) {
+                    acceptFriendRequest(e.target.dataset.id);
+                }
 
-            const rejectButtons = document.querySelectorAll('.reject-btn');
-            rejectButtons.forEach(button => {
-                button.addEventListener('click', () => rejectFriendRequest(button.dataset.id));
+                if (e.target && e.target.matches('.reject-btn')) {
+                    rejectFriendRequest(e.target.dataset.id);
+                }
             });
         }
 
